@@ -1,0 +1,9 @@
+{
+  "name": "crypto-scanner-pro",
+  "version": "5.0.0",
+  "description": "8-Strategy crypto scanner — CoinCap + Coinalyze + HyperTracker + Kiyotaka",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=14.0.0" },
+  "license": "MIT"
+}
