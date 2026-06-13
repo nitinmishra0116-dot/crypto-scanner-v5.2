@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoScanner Pro v5.2</title>
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --bg-panel: #14161f;
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --accent: #00ff9d;
+            --danger: #ff0055;
+            --text-main: #e0e6ed;
+            --text-dim: #8b9bb4;
+            --border: #2a2f3d;
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .brand {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            text-align: left;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            margin-bottom: 5px;
+            font-family: var(--font-mono);
+        }
+        .nav-btn:hover { background: rgba(0, 242, 255, 0.05); color: var(--primary); }
+        .nav-btn.active { background: rgba(0, 242, 255, 0.1); color: var(--primary); border-left: 3px solid var(--primary); }
+        .status-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        .status-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .status-val { color: var(--accent); font-family: var(--font-mono); }
+        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .card-title {
+            font-family: var(--font-mono);
+            color: var(--primary);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+        tr { cursor: pointer; }
+        tr:hover { background: rgba(0, 242, 255, 0.05); }
+        .mono { font-family: var(--font-mono); }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .btn {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+        .btn:hover { transform: scale(1.02); }
+        .btn-secondary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .badge-green { background: rgba(0, 255, 157, 0.15); color: var(--accent); }
+        .badge-red { background: rgba(255, 0, 85, 0.15); color: var(--danger); }
+        .badge-blue { background: rgba(0, 242, 255, 0.15); color: var(--primary); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input, select {
+            background: #0a0b10;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+        }
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Detail Drawer */
+        .drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: flex-end;
+        }
+        .drawer-overlay.open { display: flex; }
+        .drawer {
+            width: 500px;
+            max-width: 100%;
+            height: 100%;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--primary);
+            padding: 30px;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+        .drawer-overlay.open .drawer { transform: translateX(0); }
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .close-drawer {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .close-drawer:hover { color: var(--danger); }
+        .diag-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .diag-box {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+        .diag-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+        .diag-value { font-size: 1.2rem; font-family: var(--font-mono); font-weight: bold; }
+        .vwap-section {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        .vwap-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+        }
+        .vwap-bar {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-top: 5px;
+            position: relative;
+        }
+        .vwap-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        .signal-box {
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-family: var(--font-mono);
+            margin-top: 20px;
+        }
+        .signal-bull { background: rgba(0, 255, 157, 0.1); border: 1px solid var(--accent); color: var(--accent); }
+        .signal-bear { background: rgba(255, 0, 85, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .signal-neutral { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--text-dim); color: var(--text-dim); }
+        
+        /* HT Breakdown Styles */
+        .ht-breakdown-container {
+            margin-top: 20px;
+        }
+        .bias-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .bias-box {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .bias-title {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .bias-value {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: var(--font-mono);
+        }
+        .bias-retail { color: var(--primary); }
+        .bias-whale { color: var(--accent); }
+        .cohort-table {
+            margin-top: 20px;
+        }
+        .cohort-table table {
+            font-size: 0.85rem;
+        }
+        .cohort-table th {
+            background: rgba(0, 242, 255, 0.1);
+        }
+        .divergence-indicator {
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .divergence-high { background: rgba(0, 255, 157, 0.15); border: 1px solid var(--accent); color: var(--accent); }
+        .divergence-low { background: rgba(255, 0, 85, 0.15); border: 1px solid var(--danger); color: var(--danger); }
+        .divergence-neutral { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--text-dim); color: var(--text-dim); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">⬡ CryptoScanner v5.2</div>
+        <button class="nav-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="nav-btn" onclick="switchTab('scanner')">⚡ Scanner</button>
+        <button class="nav-btn" onclick="switchTab('orderflow')">📉 Orderflow</button>
+        <button class="nav-btn" onclick="switchTab('whales')">🐳 Whales</button>
+        <button class="nav-btn" onclick="switchTab('diagnostics')">🔧 Diagnostics</button>
+        <div class="status-panel">
+            <div class="status-item"><span>Server:</span> <span class="status-val" id="server-status">Offline</span></div>
+            <div class="status-item"><span>HT Budget:</span> <span class="status-val" id="ht-budget">--</span></div>
+            <div class="status-item"><span>Cache:</span> <span class="status-val" id="cache-count">0</span></div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="dashboard" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Market Overview</span>
+                    <button class="btn btn-secondary" onclick="loadCoins()">Refresh</button>
+                </div>
+                <table id="coins-table">
+                    <thead>
+                        <tr><th>Rank</th><th>Asset</th><th class="text-right">Price</th><th class="text-right">24h %</th><th class="text-right">7d %</th><th class="text-right">Mkt Cap</th></tr>
+                    </thead>
+                    <tbody><tr><td colspan="6" class="text-center">Loading...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="scanner" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Strategy Scanner</span>
+                    <div>
+                        <select id="scan-strategy">
+                            <option value="s5">S5 — Trend</option>
+                            <option value="s2">S2 — Momentum</option>
+                            <option value="s6">S6 — Reversal</option>
+                        </select>
+                        <button class="btn" onclick="runScan()">Scan</button>
+                    </div>
+                </div>
+                <table id="scan-results-table">
+                    <thead>
+                        <tr><th>Coin</th><th class="text-right">Price</th><th class="text-right">RSI 1H</th><th class="text-right">Score</th><th>Signal</th></tr>
+                    </thead>
+                    <tbody><tr><td colspan="5" class="text-center">Select strategy and click Scan</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="orderflow" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Futures Data</span>
+                    <button class="btn" onclick="loadFutures()">Fetch</button>
+                </div>
+                <table id="full-futures-table">
+                    <thead>
+                        <tr><th>Symbol</th><th class="text-right">Funding</th><th class="text-right">OI</th><th class="text-right">Squeeze</th></tr>
+                    </thead>
+                    <tbody><tr><td colspan="4" class="text-center">Click Fetch</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="whales" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Whale Tracker - Market Wide</span>
+                    <button class="btn" onclick="loadHtMarket()">Load Market</button>
+                </div>
+                <table id="full-ht-table">
+                    <thead>
+                        <tr><th>Coin</th><th class="text-right">Value Bias</th><th class="text-right">Divergence</th><th>Signal</th></tr>
+                    </thead>
+                    <tbody><tr><td colspan="4" class="text-center">Click Load Market</td></tr></tbody>
+                </table>
+            </div>
+            
+            <!-- HYPERLIQUID PER-COIN BREAKDOWN - RESTORED -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🐳 Per-Coin Breakdown by Cohort</span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <select id="ht-breakdown-coin" style="flex: 1;">
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="SOL">SOL</option>
+                        <option value="HYPE">HYPE</option>
+                        <option value="SUI">SUI</option>
+                        <option value="XRP">XRP</option>
+                        <option value="DOGE">DOGE</option>
+                        <option value="LINK">LINK</option>
+                        <option value="BNB">BNB</option>
+                        <option value="AVAX">AVAX</option>
+                    </select>
+                    <button class="btn" onclick="loadHtBreakdown()">Load Breakdown</button>
+                </div>
+                <div id="ht-breakdown-result" class="ht-breakdown-container">
+                    <div class="text-center" style="padding: 40px; color: var(--text-dim);">
+                        Select a coin and click Load Breakdown to see whale vs retail positioning by cohort
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="diagnostics" class="tab-content">
+            <div class="card">
+                <div class="card-header"><span class="card-title">System Status</span><button class="btn btn-secondary" onclick="checkStatus()">Refresh</button></div>
+                <pre id="status-json" style="background:#000; padding:15px; color:var(--accent);">Click Refresh</pre>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- DETAIL DRAWER -->
+<div id="detail-drawer" class="drawer-overlay" onclick="closeDrawer(event)">
+    <div class="drawer" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+            <h2 id="drawer-title" class="card-title">COIN DETAILS</h2>
+            <button class="close-drawer" onclick="closeDrawer()">×</button>
+        </div>
+        <div id="drawer-content">
+            <div class="text-center"><div class="loader"></div> Loading...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+let state = { coins: [], futures: [], htMarket: [], scanResults: [] };
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+    });
+}
+
+async function fetchAPI(endpoint) {
+    try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.error('API Error:', err);
+        return null;
+    }
+}
+
+async function loadCoins() {
+    const tbody = document.querySelector('#coins-table tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="loader"></div> Loading...</td></tr>';
+    const data = await fetchAPI('/api/coins');
+    if (data && data.data) {
+        state.coins = data.data;
+        renderCoinsTable(state.coins.slice(0, 20));
+    }
+}
+
+function renderCoinsTable(coins) {
+    const tbody = document.querySelector('#coins-table tbody');
+    tbody.innerHTML = coins.map(c => `
+        <tr onclick="openCoinDetails('${c.symbol}')">
+            <td>${c.rank}</td>
+            <td><span style="color:var(--primary); font-weight:bold">${c.symbol}</span></td>
+            <td class="text-right mono">$${c.price.toLocaleString()}</td>
+            <td class="text-right mono" style="color:${c.ch24 >= 0 ? 'var(--accent)' : 'var(--danger)'}">${c.ch24.toFixed(2)}%</td>
+            <td class="text-right mono" style="color:${c.ch7 >= 0 ? 'var(--accent)' : 'var(--danger)'}">${c.ch7.toFixed(2)}%</td>
+            <td class="text-right mono">$${(c.mcap / 1e9).toFixed(2)}B</td>
+        </tr>
+    `).join('');
+}
+
+async function loadFutures() {
+    const data = await fetchAPI('/api/futures');
+    if (data && data.data) {
+        state.futures = data.data;
+        const tbody = document.querySelector('#full-futures-table tbody');
+        tbody.innerHTML = state.futures.slice(0, 10).map(f => `
+            <tr onclick="openCoinDetails('${f.sym}')">
+                <td class="mono">${f.sym}</td>
+                <td class="text-right mono">${(f.fundingRate * 100).toFixed(4)}%</td>
+                <td class="text-right mono">$${(f.oi / 1e6).toFixed(2)}M</td>
+                <td class="text-right"><span class="badge badge-red">${f.squeezeScore}</span></td>
+            </tr>
+        `).join('');
+    }
+}
+
+async function loadHtMarket() {
+    const data = await fetchAPI('/api/ht/market');
+    if (data && data.data) {
+        state.htMarket = data.data;
+        const tbody = document.querySelector('#full-ht-table tbody');
+        tbody.innerHTML = state.htMarket.slice(0, 10).map(h => `
+            <tr onclick="showHtBreakdown('${h.coin}')">
+                <td class="mono">${h.coin}</td>
+                <td class="text-right mono">${h.valueBias}%</td>
+                <td class="text-right mono">${h.whaleDivergence}</td>
+                <td>${h.whaleDivergence > 12 ? '🐳 WHALE TRAP' : '⚖️ NEUTRAL'}</td>
+            </tr>
+        `).join('');
+        updateHtBudget(data.remaining);
+    }
+}
+
+// ✅ HYPERLIQUID BREAKDOWN FUNCTION - RESTORED
+function showHtBreakdown(coin) {
+    document.getElementById('ht-breakdown-coin').value = coin;
+    loadHtBreakdown();
+    switchTab('whales');
+}
+
+async function loadHtBreakdown() {
+    const coin = document.getElementById('ht-breakdown-coin').value;
+    const container = document.getElementById('ht-breakdown-result');
+    
+    container.innerHTML = '<div class="text-center" style="padding: 40px;"><div class="loader"></div><br>Loading cohort data...</div>';
+    
+    try {
+        const data = await fetchAPI(`/api/ht/breakdown?coin=${coin}`);
+        if (!data || !data.data) throw new Error('No data');
+        
+        const d = data.data;
+        updateHtBudget(data.remaining);
+        
+        // Determine divergence class
+        let divClass = 'divergence-neutral';
+        let divText = '⚖️ No significant divergence';
+        if (d.divergence > 12) {
+            divClass = 'divergence-high';
+            divText = '🐳 WHALE TRAP — Whales long, retail short';
+        } else if (d.divergence > 6) {
+            divClass = 'divergence-high';
+            divText = '⚡ Mild divergence — setup forming';
+        } else if (d.divergence < -12) {
+            divClass = 'divergence-low';
+            divText = '🔻 Retail more bullish — caution';
+        }
+        
+        // Build cohort table
+        let cohortRows = '';
+        if (d.breakdownBySize && Array.isArray(d.breakdownBySize)) {
+            cohortRows = d.breakdownBySize.map(b => {
+                let segmentName = 'Unknown';
+                if (b.sizeSegmentId <= 2) segmentName = 'Retail (< $1k)';
+                else if (b.sizeSegmentId <= 4) segmentName = 'Small ($1k-$10k)';
+                else if (b.sizeSegmentId <= 6) segmentName = 'Medium ($10k-$100k)';
+                else if (b.sizeSegmentId <= 8) segmentName = 'Large ($100k-$1M)';
+                else segmentName = 'Whale (> $1M)';
+                
+                const biasColor = b.bias > 0.5 ? 'var(--accent)' : 'var(--danger)';
+                const biasPct = Math.round(b.bias * 100);
+                
+                return `
+                    <tr>
+                        <td class="mono">${segmentName}</td>
+                        <td class="text-right mono">${b.count || 0}</td>
+                        <td class="text-right mono" style="color:${biasColor}">${biasPct}% Long</td>
+                        <td class="text-right mono">$${(b.totalValue || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        container.innerHTML = `
+            <div class="bias-comparison">
+                <div class="bias-box">
+                    <div class="bias-title">Retail Bias</div>
+                    <div class="bias-value bias-retail">${d.retailBiasPct}%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dim); margin-top: 5px;">Long Positions</div>
+                </div>
+                <div class="bias-box">
+                    <div class="bias-title">Whale Bias</div>
+                    <div class="bias-value bias-whale">${d.whaleBiasPct}%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-dim); margin-top: 5px;">Long Positions</div>
+                </div>
+            </div>
+            
+            <div class="diag-grid">
+                <div class="diag-box">
+                    <div class="diag-label">Divergence Score</div>
+                    <div class="diag-value" style="color: ${d.divergence > 0 ? 'var(--accent)' : 'var(--danger)'}">${d.divergence > 0 ? '+' : ''}${d.divergence}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">Whale Trap Score</div>
+                    <div class="diag-value">${d.whaleTrapScore}/99</div>
+                </div>
+            </div>
+            
+            <div class="${divClass} divergence-indicator">
+                ${divText}
+            </div>
+            
+            <div class="cohort-table">
+                <div class="diag-label" style="margin-bottom: 10px;">Position Breakdown by Size Cohort</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Size Segment</th>
+                            <th class="text-right">Accounts</th>
+                            <th class="text-right">Bias</th>
+                            <th class="text-right">Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cohortRows}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">
+                Updated: ${d.createdAt ? new Date(d.createdAt).toLocaleString() : 'N/A'}
+            </div>
+        `;
+        
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--danger); text-align:center; padding: 40px;">Error: ${e.message}</div>`;
+    }
+}
+
+async function runScan() {
+    const strategy = document.getElementById('scan-strategy').value;
+    const tbody = document.querySelector('#scan-results-table tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="loader"></div> Scanning...</td></tr>';
+    const data = await fetchAPI(`/api/kiy/scan?strategy=${strategy}`);
+    if (data && data.data) {
+        state.scanResults = data.data;
+        const scoreKey = { s2:'s2Momentum', s5:'s5Trend', s6:'s6Reversal' }[strategy] || 's5Trend';
+        tbody.innerHTML = state.scanResults.map(r => `
+            <tr onclick="openCoinDetails('${r.coin}')">
+                <td class="mono" style="color:var(--primary)">${r.coin}</td>
+                <td class="text-right mono">$${r.price.toLocaleString()}</td>
+                <td class="text-right mono">${r.rsi1H || '-'}</td>
+                <td class="text-right"><span class="badge badge-blue">${r.strategyScores?.[scoreKey] || 0}</span></td>
+                <td>${r.strategyScores?.[scoreKey] > 70 ? 'STRONG' : 'WEAK'}</td>
+            </tr>
+        `).join('');
+    }
+}
+
+async function checkStatus() {
+    const data = await fetchAPI('/api/status');
+    if (data) {
+        document.getElementById('status-json').innerText = JSON.stringify(data, null, 2);
+        document.getElementById('server-status').innerText = 'Online';
+        document.getElementById('server-status').style.color = 'var(--accent)';
+        document.getElementById('cache-count').innerText = data.cache ? data.cache.length : 0;
+        if(data.hypertracker) {
+            document.getElementById('ht-budget').innerText = `${data.hypertracker.usedToday}/${data.hypertracker.limit}`;
+        }
+    }
+}
+
+function updateHtBudget(remaining) {
+    document.getElementById('ht-budget').innerText = `${100 - remaining}/100`;
+}
+
+async function openCoinDetails(coin) {
+    const drawer = document.getElementById('detail-drawer');
+    const content = document.getElementById('drawer-content');
+    const title = document.getElementById('drawer-title');
+    
+    drawer.classList.add('open');
+    title.innerText = coin + ' ANALYTICS';
+    content.innerHTML = '<div class="text-center" style="margin-top:50px"><div class="loader"></div><br>Fetching...</div>';
+
+    try {
+        const res = await fetch('/api/kiy/indicators?coin=' + coin);
+        const json = await res.json();
+        if (!json.data) throw new Error('No data');
+        
+        const d = json.data;
+        const s = d.strategyScores || {};
+        const v = d.vwapMetrics || {};
+        
+        let signalClass = 'signal-neutral';
+        let signalText = 'NEUTRAL';
+        if ((s.s5Trend || 0) > 65 || (s.s2Momentum || 0) > 65) { 
+            signalClass = 'signal-bull'; 
+            signalText = 'BULLISH'; 
+        } else if ((s.s5Trend || 0) < 35 || (s.s2Momentum || 0) < 35) { 
+            signalClass = 'signal-bear'; 
+            signalText = 'BEARISH'; 
+        }
+
+        const range = (v.upperR3 || 999999) - (v.lowerS3 || 0);
+        const pos = range > 0 ? ((d.price - (v.lowerS3 || 0)) / range) * 100 : 50;
+        const clampedPos = Math.max(0, Math.min(100, pos));
+
+        content.innerHTML = `
+            <div class="diag-grid">
+                <div class="diag-box">
+                    <div class="diag-label">Price</div>
+                    <div class="diag-value">$${(d.price || 0).toLocaleString()}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">RSI (1H / 4H)</div>
+                    <div class="diag-value">${d.rsi1H || '-'} / ${d.rsi4H || '-'}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">CVD Trend</div>
+                    <div class="diag-value" style="color: ${d.cvdTrend === 'rising' ? 'var(--accent)' : 'var(--danger)'}">${(d.cvdTrend || 'unknown').toUpperCase()}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">OI Trend</div>
+                    <div class="diag-value" style="color: ${d.oiTrend === 'rising' ? 'var(--accent)' : 'var(--danger)'}">${(d.oiTrend || 'unknown').toUpperCase()}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">MACD Hist</div>
+                    <div class="diag-value" style="color: ${(d.macd?.hist || 0) > 0 ? 'var(--accent)' : 'var(--danger)'}">${d.macd?.hist || '0'}</div>
+                </div>
+                <div class="diag-box">
+                    <div class="diag-label">Volatility</div>
+                    <div class="diag-value">${d.volatilityMetrics?.regime || 'unknown'}</div>
+                </div>
+            </div>
+
+            <div class="vwap-section">
+                <div class="diag-label" style="margin-bottom:10px">VWAP Bands</div>
+                <div class="vwap-row"><span>Upper R3</span> <span>$${v.upperR3 || '-'}</span></div>
+                <div class="vwap-row"><span>Upper R2</span> <span>$${v.upperR2 || '-'}</span></div>
+                <div class="vwap-row" style="color:var(--primary); font-weight:bold"><span>VWAP</span> <span>$${v.vwapValue || '-'}</span></div>
+                <div class="vwap-row"><span>Lower S2</span> <span>$${v.lowerS2 || '-'}</span></div>
+                <div class="vwap-row"><span>Lower S3</span> <span>$${v.lowerS3 || '-'}</span></div>
+                <div class="vwap-bar"><div class="vwap-fill" style="width: ${clampedPos}%"></div></div>
+            </div>
+            
+            <div class="signal-box ${signalClass}">${signalText}</div>
+            
+            <div style="margin-top:20px; font-size:0.8rem; opacity:0.6; text-align:center">
+                Updated: ${d.computedAt ? new Date(d.computedAt).toLocaleTimeString() : 'N/A'}
+            </div>
+        `;
+    } catch (e) {
+        content.innerHTML = `<div style="color:var(--danger); text-align:center; margin-top:20px">Error: ${e.message}</div>`;
+    }
+}
+
+function closeDrawer(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('detail-drawer').classList.remove('open');
+}
+
+window.onload = () => {
+    checkStatus();
+    loadCoins();
+};
+</script>
+
+</body>
+</html>
